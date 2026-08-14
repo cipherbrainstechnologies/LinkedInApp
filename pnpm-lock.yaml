@@ -54,6 +54,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@applyflow/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@applyflow/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -69,6 +72,9 @@ importers:
       '@applyflow/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
+      '@applyflow/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@fastify/cookie':
         specifier: ^11.0.2
         version: 11.1.2
@@ -210,6 +216,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@applyflow/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@applyflow/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -222,6 +231,9 @@ importers:
       '@applyflow/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@applyflow/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       ioredis:
         specifier: ^5.4.2
         version: 5.11.1
@@ -241,6 +253,25 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.23.12
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.5
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(tsx@4.23.12)
+
+  packages/ai:
+    dependencies:
+      '@applyflow/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      '@applyflow/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -395,6 +426,44 @@ importers:
       eslint:
         specifier: ^9.20.0
         version: 9.39.5(jiti@2.7.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.5
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(tsx@4.23.12)
+
+  packages/storage:
+    dependencies:
+      '@applyflow/config':
+        specifier: workspace:*
+        version: link:../config
+    devDependencies:
+      '@applyflow/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^22.13.4
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.5
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(tsx@4.23.12)
+
+  packages/test-kit:
+    dependencies:
+      '@applyflow/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@applyflow/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@applyflow/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       typescript:
         specifier: ^5.7.3
         version: 5.9.3

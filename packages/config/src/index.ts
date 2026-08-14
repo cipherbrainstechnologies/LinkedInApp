@@ -50,6 +50,8 @@ const envSchema = z.object({
   // Observability
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   OTEL_ENABLED: z.coerce.boolean().default(false),
+
+  LOCAL_STORAGE_PATH: z.string().default("./uploads"),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
