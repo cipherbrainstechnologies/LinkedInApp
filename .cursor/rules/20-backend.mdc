@@ -1,0 +1,14 @@
+---
+description: ApplyFlow API, domain, database, workers, billing, AI, and connector conventions
+globs:
+  - "apps/api/**"
+  - "apps/worker/**"
+  - "packages/domain/**"
+  - "packages/db/**"
+  - "packages/connectors/**"
+  - "packages/ai/**"
+  - "packages/billing/**"
+alwaysApply: false
+---
+
+Keep domain logic framework-free. Wrap external SDKs in adapters and validate inputs/outputs with Zod. Use transactions plus an outbox for state changes that trigger jobs. Every webhook and mutating command is idempotent. PostgreSQL is authoritative; Redis may be discarded. Quotas and entitlements use append-only ledger entries. Enforce domain policy capabilities before connector execution. CAPTCHA, OTP, email verification, or new consent must yield `WAITING_FOR_USER`, never a bypass attempt.

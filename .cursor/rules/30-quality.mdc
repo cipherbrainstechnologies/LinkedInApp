@@ -1,0 +1,11 @@
+---
+description: ApplyFlow test, observability, documentation, and definition-of-done rules
+globs:
+  - "**/*.test.*"
+  - "**/*.spec.*"
+  - "tests/**"
+  - "docs/**"
+alwaysApply: false
+---
+
+Map tests to acceptance criterion IDs. Cover happy, permission, loading, empty, retry, duplicate event, concurrency, and rollback cases. No real external side effects. Use deterministic clocks, fixtures, and provider simulators. Update `docs/BUILD_STATUS.md`, OpenAPI, ADRs, and demo evidence when behaviour changes. A milestone is incomplete until lint, type-check, tests, accessibility checks, migrations, build, and smoke tests pass.

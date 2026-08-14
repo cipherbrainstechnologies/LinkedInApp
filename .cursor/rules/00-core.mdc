@@ -1,0 +1,6 @@
+---
+description: ApplyFlow product, safety, and architecture rules
+alwaysApply: true
+---
+
+Read `AGENTS.md`, `00-START-HERE.md`, and the relevant numbered specification before editing code. Keep a traceable checklist in `docs/BUILD_STATUS.md`. Use mock adapters when secrets or approvals are absent. Never scrape or bot LinkedIn, bypass CAPTCHA/OTP/access controls, fabricate candidate facts, or perform real charges/submissions in tests. Preserve domain boundaries, runtime validation, idempotency, auditability, accessibility, and the append-only quota ledger.

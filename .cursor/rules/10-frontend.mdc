@@ -1,0 +1,10 @@
+---
+description: ApplyFlow web, mobile, admin UI, accessibility, and UX conventions
+globs:
+  - "apps/web/**"
+  - "apps/mobile/**"
+  - "packages/ui-*/**"
+alwaysApply: false
+---
+
+Use capability-based modules and typed API functions. Web search/filter state belongs in the URL. Server state belongs in TanStack Query; form state belongs in React Hook Form; local state is only transient UI. Implement loading, empty, error, stale, offline, forbidden, quota-exhausted, and recovery states. Meet WCAG 2.2 AA, preserve keyboard/focus behaviour, support reduced motion, and test 320px through large desktop widths. Never expose provider secrets or raw third-party payloads.
