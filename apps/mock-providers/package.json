@@ -1,0 +1,21 @@
+{
+  "name": "@applyflow/mock-providers",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@applyflow/config": "workspace:*",
+    "fastify": "^5.2.1"
+  },
+  "devDependencies": {
+    "@applyflow/typescript-config": "workspace:*",
+    "@types/node": "^22.13.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

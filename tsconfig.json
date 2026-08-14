@@ -1,0 +1,7 @@
+{
+  "extends": "@applyflow/typescript-config/base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "exclude": ["node_modules", "dist", "build", ".next"]
+}
