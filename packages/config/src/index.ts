@@ -52,6 +52,16 @@ const envSchema = z.object({
   OTEL_ENABLED: z.coerce.boolean().default(false),
 
   LOCAL_STORAGE_PATH: z.string().default("./uploads"),
+
+  // OIDC (local mock provider in demo)
+  OIDC_ISSUER_URL: z.string().url().default("http://localhost:4100/oidc"),
+  OIDC_CLIENT_ID: z.string().default("applyflow-local"),
+  OIDC_CLIENT_SECRET: z.string().min(16).default("local-oidc-secret-min-16"),
+  OIDC_WEB_REDIRECT_URI: z
+    .string()
+    .url()
+    .default("http://localhost:4000/v1/auth/oidc/callback"),
+  JWT_ACCESS_TTL_SECONDS: z.coerce.number().default(900),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

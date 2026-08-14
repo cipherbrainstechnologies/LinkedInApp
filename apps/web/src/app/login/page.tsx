@@ -31,10 +31,25 @@ export default function LoginPage() {
     }
   }
 
+  async function oidcLogin() {
+    setError(null);
+    try {
+      const data = await api<{ authorizationUrl: string }>("/auth/oidc/start?returnTo=/home");
+      window.location.href = data.authorizationUrl;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "OIDC start failed");
+    }
+  }
+
   return (
     <main className="container">
       <h1>Demo sign in</h1>
-      <p>Select a demo persona. No password required in local demo mode.</p>
+      <p>Select a demo persona or use local OIDC (mock provider).</p>
+      <div className="card">
+        <button className="btn btn-primary" onClick={oidcLogin} style={{ marginBottom: "1rem" }}>
+          Sign in with OIDC (mock)
+        </button>
+      </div>
       {error && <div className="alert alert-error" role="alert">{error}</div>}
       <ul style={{ listStyle: "none", padding: 0 }}>
         {personas.map((p) => (

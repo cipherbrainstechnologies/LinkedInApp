@@ -6,9 +6,34 @@ import { SessionService } from "./session.service.js";
 import { StorageService } from "./storage.service.js";
 import { AiService } from "./ai.service.js";
 
+import { JwtService } from "./jwt.service.js";
+import { OidcStateService } from "./oidc-state.service.js";
+
+import { AuthGuard } from "./auth.guard.js";
+
 @Module({
-  providers: [PrismaService, RedisService, QuotaService, SessionService, StorageService, AiService],
-  exports: [PrismaService, RedisService, QuotaService, SessionService, StorageService, AiService],
+  providers: [
+    PrismaService,
+    RedisService,
+    QuotaService,
+    SessionService,
+    StorageService,
+    AiService,
+    JwtService,
+    OidcStateService,
+    AuthGuard,
+  ],
+  exports: [
+    PrismaService,
+    RedisService,
+    QuotaService,
+    SessionService,
+    StorageService,
+    AiService,
+    JwtService,
+    OidcStateService,
+    AuthGuard,
+  ],
 })
 @Global()
 export class PlatformModule {}

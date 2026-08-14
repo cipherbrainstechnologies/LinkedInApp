@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@applyflow/ai": "workspace:*",
+    "@applyflow/auth": "workspace:*",
     "@applyflow/storage": "workspace:*"
   },
   "devDependencies": {

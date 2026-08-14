@@ -7,15 +7,30 @@ import {
 } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { SessionService } from "./session.service.js";
+import { JwtService } from "./jwt.service.js";
 
 const SESSION_COOKIE = "applyflow_session";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly sessions: SessionService) {}
+  constructor(
+    private readonly sessions: SessionService,
+    private readonly jwt: JwtService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<FastifyRequest & { userId?: string }>();
+
+    const authHeader = request.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      const userId = await this.jwt.verifyAccessToken(authHeader.slice(7));
+      if (!userId) {
+        throw new UnauthorizedException({ code: "TOKEN_INVALID", message: "Invalid access token." });
+      }
+      request.userId = userId;
+      return true;
+    }
+
     const token =
       (request.cookies as Record<string, string> | undefined)?.[SESSION_COOKIE] ??
       (request.headers["x-session-token"] as string | undefined);
