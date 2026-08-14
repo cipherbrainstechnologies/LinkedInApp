@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage/
+playwright-report/
+test-results/
+.maestro/
+
+# Prisma
+packages/db/prisma/*.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Mobile
+apps/mobile/.expo/
+apps/mobile/dist/
+
+# Generated (keep committed per spec)
+# packages/api-client/src/generated is committed after generation
+
+# Uploads / local storage
+uploads/
+tmp/
+
+# Secrets
+*.pem
+*.key

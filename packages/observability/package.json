@@ -1,0 +1,31 @@
+{
+  "name": "@applyflow/observability",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@applyflow/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@applyflow/eslint-config": "workspace:*",
+    "@applyflow/typescript-config": "workspace:*",
+    "@types/node": "^22.13.4",
+    "eslint": "^9.20.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

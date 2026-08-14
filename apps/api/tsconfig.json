@@ -1,0 +1,9 @@
+{
+  "extends": "@applyflow/typescript-config/node.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["src/**/*"]
+}
