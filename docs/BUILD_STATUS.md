@@ -46,7 +46,7 @@ Last updated: 2026-08-14 (M1 OIDC/email/refresh + M2 resume/AI)
 | AUTH-05 | Partial | `GET/DELETE /sessions` | Pending |
 | RES-01 | Partial | Quarantine + worker scan | `packages/test-kit` |
 | RES-02 | Partial | Scan rejection | `packages/test-kit` |
-| RES-03 | Partial | Transactional activate | Pending integration |
+| RES-03 | Partial | Transactional activate + advisory lock | `apps/api/src/modules/resumes/resume.activate.integration.test.ts` |
 | RES-04 | Partial | Immutable resume versions | Schema |
 | AI-01 | Partial | Mock adapter | `packages/ai` tests |
 | AI-03 | Partial | Hostile prompt bounded | `packages/ai` + test-kit |
