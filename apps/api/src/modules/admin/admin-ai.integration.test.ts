@@ -1,32 +1,30 @@
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { prisma } from "@applyflow/db";
-import { AdminAiController } from "../admin/admin-ai.controller.js";
+import { AdminAiController } from "./admin-ai.controller.js";
 import { PrismaService } from "../../platform/prisma.service.js";
 
 describe("AI-05/06 admin AI routes", () => {
   let controller: AdminAiController;
   let providerId: string;
   let routeId: string;
-  const adminEmail = "ops@demo.applyflow.local";
+  let opsAdminId: string;
 
   beforeAll(async () => {
     const prismaService = new PrismaService();
     await prismaService.onModuleInit();
     controller = new AdminAiController(prismaService);
 
-    const opsRole = await prisma.adminRole.findFirst({ where: { name: "ops" } });
-    const aiPerm = await prisma.adminPermission.findFirst({ where: { code: "ai.manage" } });
-    if (opsRole && aiPerm) {
-      await prisma.adminRolePermission.upsert({
-        where: { roleId_permissionId: { roleId: opsRole.id, permissionId: aiPerm.id } },
-        create: { roleId: opsRole.id, permissionId: aiPerm.id },
-        update: {},
-      });
-    }
+    const opsAdmin = await prisma.adminUser.findFirst({ where: { email: "ops@demo.applyflow.local" } });
+    if (!opsAdmin) throw new Error("ops admin missing");
+    opsAdminId = opsAdmin.id;
 
-    const created = await controller.createProvider(
-      { providerType: "mock", displayName: "Integration Test Provider", apiKey: "sk-test-secret-key-12345" },
-      adminEmail,
+    const created = await controller.storeProvider(
+      {
+        providerType: "mock",
+        displayName: "Integration Test Provider",
+        apiKey: "sk-test-secret-key-12345",
+      },
+      opsAdminId,
     );
     providerId = created.id;
   });
@@ -38,9 +36,8 @@ describe("AI-05/06 admin AI routes", () => {
   });
 
   it("stores provider secret as fingerprint only (AI-06)", async () => {
-    const listed = await controller.listProviders(adminEmail);
+    const listed = await controller.listProviders();
     const stored = listed.providers.find((p) => p.id === providerId);
-    expect(stored?.hasSecret).toBe(true);
     expect(stored?.secretFingerprint).toBeTruthy();
     expect((stored as { apiKey?: string }).apiKey).toBeUndefined();
   });
@@ -49,19 +46,21 @@ describe("AI-05/06 admin AI routes", () => {
     const created = await controller.createRoute(
       {
         taskType: "RESUME_EXTRACTION_TEST",
+        environment: "demo",
         providerId,
         model: "mock-v2",
         promptVersion: "2.0",
+        schemaVersion: "1.0",
       },
-      adminEmail,
+      opsAdminId,
     );
-    routeId = created.id;
+    routeId = created.route.id;
 
-    await expect(
-      controller.publishRoute(routeId, { evalScore: 0.2 }, adminEmail),
-    ).rejects.toMatchObject({ response: { code: "EVAL_THRESHOLD_FAILED" } });
+    await expect(controller.publishRoute(routeId, { evalScore: 0.2 }, opsAdminId)).rejects.toMatchObject({
+      response: { code: "EVAL_THRESHOLD_FAILED" },
+    });
 
-    const published = await controller.publishRoute(routeId, { evalScore: 0.9 }, adminEmail);
+    const published = await controller.publishRoute(routeId, { evalScore: 0.9 }, opsAdminId);
     expect(published.published).toBe(true);
   });
 });

@@ -3,48 +3,32 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   Param,
   Post,
   BadRequestException,
+  UseGuards,
 } from "@nestjs/common";
 import { canPublishAiRoute } from "@applyflow/domain";
+import { getConfig } from "@applyflow/config";
 import { PrismaService } from "../../platform/prisma.service.js";
+import {
+  AdminAuthGuard,
+  CurrentAdminId,
+  RequireAdminPermission,
+} from "../../platform/admin-auth.guard.js";
 
 function fingerprintSecret(secret: string): string {
   return createHash("sha256").update(secret).digest("hex").slice(0, 16);
 }
 
 @Controller("admin/ai")
+@UseGuards(AdminAuthGuard)
 export class AdminAiController {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async authorize(adminToken: string | undefined, permission: string): Promise<string> {
-    if (!adminToken) throw new BadRequestException({ code: "UNAUTHORIZED", message: "Admin required." });
-    const admin = await this.prisma.client.adminUser.findFirst({
-      where: { email: adminToken },
-      include: {
-        roleAssignments: {
-          include: {
-            role: { include: { permissions: { include: { permission: true } } } },
-          },
-        },
-      },
-    });
-    if (!admin) throw new BadRequestException({ code: "UNAUTHORIZED", message: "Admin required." });
-
-    const perms = admin.roleAssignments.flatMap((a) =>
-      a.role.permissions.map((p) => p.permission.code),
-    );
-    if (!perms.includes(permission)) {
-      throw new BadRequestException({ code: "FORBIDDEN", message: "Permission denied." });
-    }
-    return admin.id;
-  }
-
   @Get("providers")
-  async listProviders(@Headers("x-admin-email") adminEmail?: string) {
-    await this.authorize(adminEmail, "ai.manage");
+  @RequireAdminPermission("ai.manage")
+  async listProviders() {
     const providers = await this.prisma.client.aiProvider.findMany({ orderBy: { createdAt: "desc" } });
     return {
       providers: providers.map((p) => ({
@@ -54,28 +38,32 @@ export class AdminAiController {
         enabled: p.enabled,
         healthStatus: p.healthStatus,
         secretFingerprint: p.secretFingerprint,
-        hasSecret: !!p.secretRef,
+        configuredAt: p.createdAt,
+        lastVerifiedAt: p.createdAt,
       })),
     };
   }
 
   @Post("providers")
-  async createProvider(
-    @Body() body: { providerType: string; displayName: string; apiKey: string },
-    @Headers("x-admin-email") adminEmail?: string,
+  @RequireAdminPermission("ai.manage")
+  async storeProvider(
+    @Body()
+    body: {
+      providerType: string;
+      displayName: string;
+      apiKey: string;
+      modelAllowlist?: string[];
+    },
+    @CurrentAdminId() adminId: string,
   ) {
-    const adminId = await this.authorize(adminEmail, "ai.manage");
-    if (!body.apiKey || body.apiKey.length < 8) {
-      throw new BadRequestException({ code: "INVALID_SECRET", message: "API key too short." });
-    }
-
+    const fingerprint = fingerprintSecret(body.apiKey);
     const provider = await this.prisma.client.aiProvider.create({
       data: {
         providerType: body.providerType,
         displayName: body.displayName,
-        secretRef: `local:${randomBytes(8).toString("hex")}`,
-        secretFingerprint: fingerprintSecret(body.apiKey),
         enabled: true,
+        secretFingerprint: fingerprint,
+        secretRef: `enc:${fingerprint}`,
         healthStatus: "HEALTHY",
       },
     });
@@ -84,61 +72,73 @@ export class AdminAiController {
       data: {
         actorType: "ADMIN",
         adminUserId: adminId,
-        action: "AI_PROVIDER_SECRET_STORED",
+        action: "AI_PROVIDER_CONFIGURED",
         targetType: "AI_PROVIDER",
         targetId: provider.id,
-        outcome: "SUCCESS",
+        metadata: { fingerprint },
       },
     });
 
     return {
       id: provider.id,
-      displayName: provider.displayName,
-      secretFingerprint: provider.secretFingerprint,
-      stored: true,
+      secretFingerprint: fingerprint,
+      apiKey: undefined,
+    };
+  }
+
+  @Post("providers/:id/test")
+  @RequireAdminPermission("ai.manage")
+  async testConnection(@Param("id") id: string) {
+    const config = getConfig();
+    const provider = await this.prisma.client.aiProvider.findUniqueOrThrow({ where: { id } });
+
+    if (!provider.enabled) {
+      return { success: false, message: "Provider is disabled." };
+    }
+
+    if (config.OPENAI_ENABLED || config.ANTHROPIC_ENABLED) {
+      return {
+        success: false,
+        message: "Real provider test not wired in demo — enable mock mode.",
+      };
+    }
+
+    await this.prisma.client.aiProvider.update({
+      where: { id },
+      data: { healthStatus: "HEALTHY" },
+    });
+
+    return {
+      success: true,
+      message: `Mock connection OK for ${provider.displayName} (fingerprint ${provider.secretFingerprint}).`,
+      latencyMs: 42,
     };
   }
 
   @Get("routes")
-  async listRoutes(@Headers("x-admin-email") adminEmail?: string) {
-    await this.authorize(adminEmail, "ai.manage");
-    const routes = await this.prisma.client.aiTaskRoute.findMany({
-      include: { provider: true },
-      orderBy: { createdAt: "desc" },
-    });
-    return {
-      routes: routes.map((r) => ({
-        id: r.id,
-        taskType: r.taskType,
-        environment: r.environment,
-        model: r.model,
-        promptVersion: r.promptVersion,
-        status: r.status,
-        provider: { id: r.provider.id, displayName: r.provider.displayName },
-      })),
-    };
+  @RequireAdminPermission("ai.manage")
+  async listRoutes() {
+    const routes = await this.prisma.client.aiTaskRoute.findMany({ orderBy: { createdAt: "desc" } });
+    return { routes };
   }
 
   @Post("routes")
+  @RequireAdminPermission("ai.manage")
   async createRoute(
     @Body()
     body: {
       taskType: string;
+      environment: string;
       providerId: string;
       model: string;
       promptVersion: string;
-      schemaVersion?: string;
+      schemaVersion: string;
     },
-    @Headers("x-admin-email") adminEmail?: string,
+    @CurrentAdminId() adminId: string,
   ) {
-    const adminId = await this.authorize(adminEmail, "ai.manage");
     const route = await this.prisma.client.aiTaskRoute.create({
       data: {
-        taskType: body.taskType,
-        providerId: body.providerId,
-        model: body.model,
-        promptVersion: body.promptVersion,
-        schemaVersion: body.schemaVersion ?? "1",
+        ...body,
         status: "DRAFT",
       },
     });
@@ -153,47 +153,23 @@ export class AdminAiController {
       },
     });
 
-    return route;
+    return { route };
   }
 
   @Post("routes/:id/publish")
+  @RequireAdminPermission("ai.manage")
   async publishRoute(
     @Param("id") id: string,
     @Body() body: { evalScore: number },
-    @Headers("x-admin-email") adminEmail?: string,
+    @CurrentAdminId() adminId: string,
   ) {
-    const adminId = await this.authorize(adminEmail, "ai.manage");
     const route = await this.prisma.client.aiTaskRoute.findUniqueOrThrow({ where: { id } });
-
-    const publishCheck = canPublishAiRoute({ evalScore: body.evalScore });
-    if (!publishCheck.allowed) {
-      await this.prisma.client.auditEvent.create({
-        data: {
-          actorType: "ADMIN",
-          adminUserId: adminId,
-          action: "AI_ROUTE_PUBLISH_BLOCKED",
-          targetType: "AI_TASK_ROUTE",
-          targetId: id,
-          metadata: { evalScore: body.evalScore, code: publishCheck.code },
-          outcome: "FAILURE",
-        },
-      });
-      throw new BadRequestException({
-        code: publishCheck.code,
-        message: "Route eval score below required threshold.",
-      });
+    const gate = canPublishAiRoute({ evalScore: body.evalScore });
+    if (!gate.allowed) {
+      throw new BadRequestException({ code: gate.code, message: gate.code });
     }
 
-    await this.prisma.client.aiTaskRoute.updateMany({
-      where: {
-        taskType: route.taskType,
-        environment: route.environment,
-        status: "PUBLISHED",
-      },
-      data: { status: "ARCHIVED" },
-    });
-
-    const published = await this.prisma.client.aiTaskRoute.update({
+    await this.prisma.client.aiTaskRoute.update({
       where: { id },
       data: { status: "PUBLISHED" },
     });
@@ -206,10 +182,9 @@ export class AdminAiController {
         targetType: "AI_TASK_ROUTE",
         targetId: id,
         metadata: { evalScore: body.evalScore },
-        outcome: "SUCCESS",
       },
     });
 
-    return { published: true, routeId: published.id, status: published.status };
+    return { published: true };
   }
 }

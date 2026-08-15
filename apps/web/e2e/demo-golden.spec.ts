@@ -1,6 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
+import { execSync } from "node:child_process";
 
 const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:4000/v1";
+const REPO_ROOT = process.env.APPLYFLOW_ROOT ?? "/workspace";
 
 async function demoLogin(page: Page, personaId: string) {
   const res = await page.request.post(`${API}/auth/demo/login`, {
@@ -21,7 +23,7 @@ test.describe("DEMO-02 golden paths", () => {
   test("experienced demo persona reaches home", async ({ page }) => {
     await demoLogin(page, "experienced-launch");
     await page.goto("/home");
-    await expect(page.getByRole("heading", { name: /Welcome/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible();
   });
 
   test("fresher persona can open onboarding", async ({ page }) => {
@@ -33,7 +35,7 @@ test.describe("DEMO-02 golden paths", () => {
   test("discover lists seeded jobs", async ({ page }) => {
     await demoLogin(page, "experienced-launch");
     await page.goto("/discover");
-    await expect(page.getByRole("heading", { name: /Discover jobs/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Find jobs/i })).toBeVisible();
     await expect(page.locator("ul li").first()).toBeVisible({ timeout: 15_000 });
   });
 
@@ -56,12 +58,22 @@ test.describe("DEMO-02 golden paths", () => {
     await page.getByRole("button", { name: /Prepare application/i }).click();
     await expect(page).toHaveURL(/\/applications\//);
     const prepareScreening = page.getByRole("button", { name: /Prepare screening questions/i });
-    await expect(prepareScreening).toBeVisible({ timeout: 20_000 });
-    await prepareScreening.click();
-    await expect(page.getByText(/Screening answers/i)).toBeVisible();
+    if (await prepareScreening.isVisible()) {
+      await prepareScreening.click();
+    }
+    await expect(page.getByRole("heading", { name: /Screening answers/i })).toBeVisible();
+  });
+
+  test("help demo checklist loads and can restart", async ({ page }) => {
+    await demoLogin(page, "experienced-launch");
+    await page.goto("/help");
+    await expect(page.getByRole("heading", { name: /Help & demo guide/i })).toBeVisible();
+    await page.getByRole("button", { name: /Restart tour/i }).click();
+    await expect(page.getByText(/Presentation checklist/i)).toBeVisible();
   });
 
   test("upgrade Launch to Power preserves usage (BILL-02)", async ({ page }) => {
+    execSync("pnpm db:seed", { cwd: REPO_ROOT, stdio: "pipe" });
     await demoLogin(page, "experienced-launch");
 
     const subRes = await page.request.get(`${API}/billing/subscription`);

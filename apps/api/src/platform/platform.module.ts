@@ -10,6 +10,9 @@ import { JwtService } from "./jwt.service.js";
 import { OidcStateService } from "./oidc-state.service.js";
 
 import { AuthGuard } from "./auth.guard.js";
+import { AdminSessionService } from "./admin-session.service.js";
+import { AdminRbacService } from "./admin-rbac.service.js";
+import { AdminAuthGuard } from "./admin-auth.guard.js";
 
 @Module({
   providers: [
@@ -22,6 +25,9 @@ import { AuthGuard } from "./auth.guard.js";
     JwtService,
     OidcStateService,
     AuthGuard,
+    AdminSessionService,
+    AdminRbacService,
+    AdminAuthGuard,
   ],
   exports: [
     PrismaService,
@@ -33,6 +39,9 @@ import { AuthGuard } from "./auth.guard.js";
     JwtService,
     OidcStateService,
     AuthGuard,
+    AdminSessionService,
+    AdminRbacService,
+    AdminAuthGuard,
   ],
 })
 @Global()

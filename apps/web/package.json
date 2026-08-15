@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start -p 3000",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@applyflow/design-tokens": "workspace:*",
+    "@applyflow/ui-web": "workspace:*",
     "@applyflow/schemas": "workspace:*",
     "@tanstack/react-query": "^5.66.0",
     "next": "^15.2.0",

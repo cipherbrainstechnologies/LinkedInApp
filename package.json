@@ -2,10 +2,13 @@
   "name": "applyflow",
   "private": true,
   "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "bootstrap": "node scripts/bootstrap.mjs",
     "dev:infra": "node scripts/wait-for-services.mjs",
-    "dev": "turbo run dev --parallel --filter=!@applyflow/mobile",
+    "dev": "turbo run dev --filter=!@applyflow/mobile",
     "dev:mobile": "pnpm --filter @applyflow/mobile dev",
     "db:migrate": "pnpm --filter @applyflow/db migrate:deploy",
     "db:seed": "pnpm --filter @applyflow/db seed",
@@ -22,7 +25,18 @@
     "verify": "node scripts/verify.mjs",
     "demo:reset": "node scripts/demo-reset.mjs",
     "test:acceptance": "pnpm --filter @applyflow/test-kit test",
-    "demo:smoke": "node scripts/smoke.mjs"
+    "demo:smoke": "node scripts/smoke.mjs",
+    "railway:build:api": "node scripts/railway-build.mjs api",
+    "railway:build:web": "node scripts/railway-build.mjs web",
+    "railway:build:admin": "node scripts/railway-build.mjs admin",
+    "railway:build:worker": "node scripts/railway-build.mjs worker",
+    "railway:build:mock-providers": "node scripts/railway-build.mjs mock-providers",
+    "railway:release": "node scripts/railway-release.mjs",
+    "start:railway:api": "pnpm --filter @applyflow/api start",
+    "start:railway:web": "pnpm --filter @applyflow/web start",
+    "start:railway:admin": "pnpm --filter @applyflow/admin start",
+    "start:railway:worker": "pnpm --filter @applyflow/worker start",
+    "start:railway:mock-providers": "pnpm --filter @applyflow/mock-providers start"
   },
   "devDependencies": {
     "turbo": "^2.4.4",

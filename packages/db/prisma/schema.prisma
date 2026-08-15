@@ -811,8 +811,24 @@ model AdminUser {
 
   roleAssignments AdminRoleAssignment[]
   auditEvents     AuditEvent[]
+  sessions        AdminSession[]
 
   @@map("admin_users")
+}
+
+model AdminSession {
+  id           String    @id @default(uuid()) @db.Uuid
+  adminUserId  String    @map("admin_user_id") @db.Uuid
+  tokenHash    String    @map("token_hash")
+  deviceLabel  String?   @map("device_label")
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@map("admin_sessions")
 }
 
 model AdminRole {

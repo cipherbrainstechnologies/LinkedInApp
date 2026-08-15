@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadConfig, resetConfigForTests } from "./index.js";
+import { loadConfig, resetConfigForTests, resolveListenPort } from "./index.js";
 
 describe("config", () => {
   it("loads defaults for local development", () => {
@@ -25,5 +25,13 @@ describe("config", () => {
         ENCRYPTION_KEY: "prod-encryption-key-minimum-32-chars",
       }),
     ).toThrow("DEMO_AUTH_ENABLED");
+  });
+
+  it("resolveListenPort prefers Railway PORT", () => {
+    const prev = process.env.PORT;
+    process.env.PORT = "8080";
+    expect(resolveListenPort(4000)).toBe(8080);
+    if (prev === undefined) delete process.env.PORT;
+    else process.env.PORT = prev;
   });
 });

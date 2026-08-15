@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start -p 3001",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-3001}",
     "typecheck": "tsc --noEmit",
     "lint": "next lint"
   },
   "dependencies": {
     "@applyflow/design-tokens": "workspace:*",
+    "@applyflow/ui-web": "workspace:*",
     "next": "^15.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

@@ -6,7 +6,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx watch src/main.ts",
-    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
@@ -19,7 +18,8 @@
     "@applyflow/db": "workspace:*",
     "@applyflow/domain": "workspace:*",
     "@applyflow/observability": "workspace:*",
-    "ioredis": "^5.4.2"
+    "ioredis": "^5.4.2",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
     "@applyflow/eslint-config": "workspace:*",

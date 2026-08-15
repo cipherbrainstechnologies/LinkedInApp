@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Alert, Card, PageHeader, PipelineHero } from "@applyflow/ui-web";
 import { api } from "@/shared/api";
 
 type Persona = { id: string; label: string; email: string };
@@ -42,34 +43,61 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container">
-      <h1>Demo sign in</h1>
-      <p>Select a demo persona or use local OIDC (mock provider).</p>
-      <div className="card">
-        <button className="btn btn-primary" onClick={oidcLogin} style={{ marginBottom: "1rem" }}>
-          Sign in with OIDC (mock)
-        </button>
+    <main className="af-page">
+      <div className="af-container" style={{ maxWidth: "560px", paddingTop: "var(--space-2xl)" }}>
+        <PageHeader
+          title="Sign in to ApplyFlow"
+          description="Local demo uses seeded personas. Production uses OIDC — no passwords stored in ApplyFlow."
+        />
+
+        <Card highlight>
+          <PipelineHero />
+          <p className="af-muted" style={{ marginTop: "var(--space-md)" }}>
+            Your data stays under your control: AI drafts require confirmation, quotas are transparent,
+            and assisted connectors never bypass employer sites.
+          </p>
+        </Card>
+
+        {error && <Alert variant="error" role="alert">{error}</Alert>}
+
+        <Card>
+          <h2 className="af-h2">Mock OIDC</h2>
+          <p className="af-muted">Uses local mock provider — same session shape as production OIDC.</p>
+          <button
+            type="button"
+            className="af-btn af-btn-secondary"
+            style={{ marginTop: "var(--space-sm)" }}
+            onClick={oidcLogin}
+          >
+            Sign in with OIDC (mock)
+          </button>
+        </Card>
+
+        <h2 className="af-h2">Demo personas</h2>
+        <ul className="af-job-list">
+          {personas.map((p) => (
+            <li key={p.id}>
+              <Card>
+                <div className="af-row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <strong>{p.label}</strong>
+                    <p className="af-muted" style={{ margin: "0.25rem 0 0" }}>{p.email}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="af-btn af-btn-primary"
+                    onClick={() => login(p.id)}
+                    disabled={loading === p.id}
+                    aria-busy={loading === p.id}
+                  >
+                    {loading === p.id ? "Signing in…" : "Continue"}
+                  </button>
+                </div>
+              </Card>
+            </li>
+          ))}
+        </ul>
       </div>
-      {error && <div className="alert alert-error" role="alert">{error}</div>}
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {personas.map((p) => (
-          <li key={p.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <strong>{p.label}</strong>
-              <br />
-              <small>{p.email}</small>
-            </div>
-            <button
-              className="btn btn-primary"
-              onClick={() => login(p.id)}
-              disabled={loading === p.id}
-              aria-busy={loading === p.id}
-            >
-              {loading === p.id ? "Signing in…" : "Sign in"}
-            </button>
-          </li>
-        ))}
-      </ul>
     </main>
   );
 }

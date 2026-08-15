@@ -12,7 +12,7 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z
     .string()
-    .default("postgresql://applyflow:applyflow@localhost:5432/applyflow"),
+    .default("postgresql://applyflow:applyflow@127.0.0.1:55432/applyflow?schema=public"),
 
   // Redis
   REDIS_URL: z.string().default("redis://localhost:6379"),
@@ -41,7 +41,8 @@ const envSchema = z.object({
   STRIPE_ENABLED: z.coerce.boolean().default(false),
   RAZORPAY_ENABLED: z.coerce.boolean().default(false),
 
-  // Ports
+  // Ports (Railway sets PORT; service-specific ports are fallbacks for local dev)
+  PORT: z.coerce.number().optional(),
   API_PORT: z.coerce.number().default(4000),
   WEB_PORT: z.coerce.number().default(3000),
   ADMIN_PORT: z.coerce.number().default(3001),
@@ -101,4 +102,14 @@ export function getConfig(): AppConfig {
 
 export function resetConfigForTests(): void {
   cached = null;
+}
+
+/** Listen port for HTTP services — honours Railway `PORT` when set. */
+export function resolveListenPort(fallback: number): number {
+  const envPort = process.env.PORT;
+  if (envPort !== undefined && envPort !== "") {
+    const parsed = Number(envPort);
+    if (!Number.isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return fallback;
 }
