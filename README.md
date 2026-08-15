@@ -4,20 +4,30 @@ Apply faster without losing control or accuracy.
 
 ## Quick start
 
-**Prerequisites:** Node.js 22+, pnpm (Corepack), PostgreSQL 16, Redis 7. Docker Compose optional.
+**Prerequisites:** Node.js 22+, pnpm through Corepack, and Docker Desktop.
 
-```bash
+Docker Compose provides PostgreSQL 16, Redis 7, MinIO and Mailpit, so separate local installations are not required.
+
+### Windows PowerShell
+
+```powershell
 corepack enable
-pnpm install
-cp .env.example .env
-# Start PostgreSQL and Redis (or: docker compose -f infra/compose.yaml up -d)
+pnpm bootstrap
+
+if (-not (Test-Path .env)) {
+    Copy-Item .env.example .env
+}
+
+# Prisma currently runs from packages/db and requires its own environment file.
+Copy-Item .env packages\db\.env -Force
+
+docker compose -f infra/compose.yaml up -d --wait
+docker compose -f infra/compose.yaml ps
+
 pnpm db:migrate
+
+# Run only after migration succeeds.
 pnpm db:seed
-pnpm --filter @applyflow/api dev    # API on :4000
-pnpm --filter @applyflow/worker dev # Background worker
-pnpm --filter @applyflow/web dev    # Web on :3000
-pnpm --filter @applyflow/admin dev  # Admin on :3001
-```
 
 ## Demo sign-in
 
