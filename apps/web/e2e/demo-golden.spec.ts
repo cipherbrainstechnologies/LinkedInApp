@@ -52,10 +52,39 @@ test.describe("DEMO-02 golden paths", () => {
   test("prepare application from job detail", async ({ page }) => {
     await demoLogin(page, "experienced-launch");
     await page.goto("/discover");
-    await page.locator("ul li a").first().click();
+    await page.getByRole("link", { name: /Software Engineer/i }).click();
     await page.getByRole("button", { name: /Prepare application/i }).click();
     await expect(page).toHaveURL(/\/applications\//);
-    await page.getByRole("button", { name: /Prepare screening/i }).click();
+    const prepareScreening = page.getByRole("button", { name: /Prepare screening questions/i });
+    await expect(prepareScreening).toBeVisible({ timeout: 20_000 });
+    await prepareScreening.click();
     await expect(page.getByText(/Screening answers/i)).toBeVisible();
+  });
+
+  test("upgrade Launch to Power preserves usage (BILL-02)", async ({ page }) => {
+    await demoLogin(page, "experienced-launch");
+
+    const subRes = await page.request.get(`${API}/billing/subscription`);
+    const subData = await subRes.json();
+    if (subData.pendingPayment?.state === "PENDING") {
+      await page.request.post(`${API}/billing/webhooks/mock`, {
+        data: { paymentId: subData.pendingPayment.id, event: "payment.failed" },
+      });
+    }
+
+    await page.goto("/plan");
+    await expect(page.getByText(/20 used of 50/i)).toBeVisible();
+
+    await page.getByRole("button", { name: /Preview upgrade/i }).nth(2).click();
+    await expect(page.getByText(/Available after upgrade: 80/i)).toBeVisible();
+
+    await page.getByRole("button", { name: /Confirm this upgrade/i }).click();
+    await expect(page.getByText(/Payment pending webhook confirmation/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Simulate webhook success/i })).toBeVisible();
+    await expect(page.getByText(/30 available/i)).toBeVisible();
+
+    await page.getByRole("button", { name: /Simulate webhook success/i }).click();
+    await expect(page.getByText(/20 used of 100/i)).toBeVisible();
+    await expect(page.getByText(/80 available/i)).toBeVisible();
   });
 });

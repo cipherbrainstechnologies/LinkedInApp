@@ -87,9 +87,9 @@ export default function ApplicationDetailPage() {
       <div className="container">
         <h1>{job.title} at {job.company}</h1>
         <p>State: <span className="status-badge">{app.state as string}</span> · Mode: {app.mode as string}</p>
-        {app.nextAction && (
+        {app.nextAction != null && app.nextAction !== "" && (
           <div className="alert alert-info" role="status">
-            Next action: {app.nextAction as string}
+            Next action: {String(app.nextAction)}
           </div>
         )}
         {status && <pre className="alert alert-info">{status}</pre>}

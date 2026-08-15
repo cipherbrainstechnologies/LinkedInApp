@@ -25,6 +25,7 @@ console.log("API healthy");
 try {
   execSync("pnpm --filter @applyflow/domain test", { stdio: "inherit" });
   execSync("pnpm --filter @applyflow/config test", { stdio: "inherit" });
+  execSync("pnpm --filter @applyflow/api test:integration", { stdio: "inherit" });
   console.log("Smoke tests passed.");
 } catch {
   console.error("Smoke tests failed");
