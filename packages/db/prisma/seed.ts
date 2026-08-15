@@ -296,7 +296,7 @@ async function main() {
 
   const supportPerms = ["customers.read", "quota.adjust", "audit.read"];
   const financePerms = ["customers.read", "billing.read", "plans.manage", "audit.read"];
-  const opsPerms = ["connectors.manage", "audit.read"];
+  const opsPerms = ["connectors.manage", "audit.read", "ai.manage"];
   const auditorPerms = ["audit.read"];
 
   for (const code of supportPerms) {
@@ -339,6 +339,7 @@ async function main() {
     { email: "support@demo.applyflow.local", role: supportRole.id },
     { email: "finance@demo.applyflow.local", role: financeRole.id },
     { email: "ops@demo.applyflow.local", role: opsRole.id },
+    { email: "ai@demo.applyflow.local", role: opsRole.id },
     { email: "auditor@demo.applyflow.local", role: auditorRole.id },
   ];
 

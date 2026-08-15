@@ -9,13 +9,17 @@ export type OnboardingCompletionInput = {
   hasVerifiedEmail: boolean;
   hasContact: boolean;
   hasTargetTitle: boolean;
+  targetCount: number;
   hasLocationPreference: boolean;
   hasActiveResume: boolean;
   hasRequiredConsent: boolean;
+  hasWorkAuthorisation: boolean;
   hasUnconfirmedRequiredFields: boolean;
   path: "EXPERIENCED" | "FRESHER" | null;
   experienceCount: number;
   educationCount: number;
+  projectCount: number;
+  skillCount: number;
 };
 
 export function validateOnboardingCompletion(
@@ -55,6 +59,14 @@ export function validateOnboardingCompletion(
     });
   }
 
+  if (input.path === "FRESHER" && input.projectCount === 0 && input.skillCount === 0) {
+    blockers.push({
+      code: "PROJECT_OR_SKILL_REQUIRED",
+      field: "projects",
+      message: "Add at least one project or skill.",
+    });
+  }
+
   if (input.path === "EXPERIENCED" && input.experienceCount === 0) {
     blockers.push({
       code: "EXPERIENCE_REQUIRED",
@@ -71,6 +83,14 @@ export function validateOnboardingCompletion(
     });
   }
 
+  if (input.path === "FRESHER" && input.targetCount < 2) {
+    blockers.push({
+      code: "MULTIPLE_TITLES_REQUIRED",
+      field: "targets",
+      message: "Select at least two target job titles for the fresher path.",
+    });
+  }
+
   if (!input.hasLocationPreference) {
     blockers.push({
       code: "LOCATION_PREFERENCE_REQUIRED",
@@ -84,6 +104,14 @@ export function validateOnboardingCompletion(
       code: "ACTIVE_RESUME_REQUIRED",
       field: "resume",
       message: "Upload and activate a resume.",
+    });
+  }
+
+  if (!input.hasWorkAuthorisation) {
+    blockers.push({
+      code: "WORK_AUTHORISATION_REQUIRED",
+      field: "workAuthorisation",
+      message: "Add your work authorisation status.",
     });
   }
 
