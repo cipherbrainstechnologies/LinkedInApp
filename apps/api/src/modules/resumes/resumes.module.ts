@@ -17,7 +17,7 @@ import { StorageService } from "../../platform/storage.service.js";
 
 @Controller()
 @UseGuards(AuthGuard)
-class ResumesController {
+export class ResumesController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
@@ -265,16 +265,22 @@ class ResumesController {
       throw new BadRequestException({ code: "DOCUMENT_NOT_CLEAN", message: "Resume document not clean." });
     }
 
-    await this.prisma.client.$transaction([
-      this.prisma.client.resume.updateMany({
+    const [lockKey1, lockKey2] = userAdvisoryLockKeys(userId);
+    await this.prisma.client.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(
+        "SELECT pg_advisory_xact_lock($1::int, $2::int)",
+        lockKey1,
+        lockKey2,
+      );
+      await tx.resume.updateMany({
         where: { userId, isActive: true },
         data: { isActive: false },
-      }),
-      this.prisma.client.resume.update({
+      });
+      await tx.resume.update({
         where: { id },
         data: { isActive: true, activeVersionId: version.id },
-      }),
-    ]);
+      });
+    });
 
     return { activated: true, resumeId: id, activeVersionId: version.id };
   }
@@ -282,3 +288,8 @@ class ResumesController {
 
 @Module({ controllers: [ResumesController] })
 export class ResumesModule {}
+
+function userAdvisoryLockKeys(userId: string): [number, number] {
+  const hash = createHash("sha256").update(userId).digest();
+  return [hash.readInt32BE(0), hash.readInt32BE(4)];
+}
