@@ -21,6 +21,7 @@
     "build": "turbo run build",
     "verify": "node scripts/verify.mjs",
     "demo:reset": "node scripts/demo-reset.mjs",
+    "test:acceptance": "pnpm --filter @applyflow/test-kit test",
     "demo:smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {

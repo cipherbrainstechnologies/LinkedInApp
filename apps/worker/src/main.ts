@@ -1,23 +1,141 @@
+import { config as loadDotenv } from "dotenv";
+import { resolve } from "node:path";
+loadDotenv({ path: resolve(import.meta.dirname, "../../../.env") });
+
 import { prisma } from "@applyflow/db";
 import { createLogger } from "@applyflow/observability";
+import { getConfig } from "@applyflow/config";
+import { AiGateway } from "@applyflow/ai";
+import {
+  LocalFileStore,
+  scanDocumentBuffer,
+  extractTextFromBuffer,
+} from "@applyflow/storage";
+import { createHash } from "node:crypto";
 
 const logger = createLogger("worker");
 const POLL_INTERVAL_MS = 2000;
 
-async function processOutboxEvent(event: {
-  id: string;
-  eventType: string;
-  aggregateId: string;
-  payload: unknown;
+const config = getConfig();
+const fileStore = new LocalFileStore(config.LOCAL_STORAGE_PATH);
+const aiGateway = new AiGateway({
+  mockEnabled: true,
+  openaiEnabled: config.OPENAI_ENABLED,
+  anthropicEnabled: config.ANTHROPIC_ENABLED,
+});
+
+async function processDocumentEvent(payload: { documentId: string; userId: string }) {
+  const doc = await prisma.document.findUniqueOrThrow({ where: { id: payload.documentId } });
+
+  await prisma.document.update({
+    where: { id: doc.id },
+    data: { scanStatus: "SCANNING" },
+  });
+
+  let buffer: Buffer;
+  try {
+    buffer = await fileStore.readQuarantine(doc.objectKey);
+  } catch {
+    await prisma.document.update({
+      where: { id: doc.id },
+      data: { scanStatus: "REJECTED", extractionStatus: "FAILED" },
+    });
+    return;
+  }
+
+  const contentHash = createHash("sha256").update(buffer).digest("hex");
+  const scan = scanDocumentBuffer(buffer, doc.mimeType, contentHash);
+
+  if (scan.status === "REJECTED") {
+    await prisma.document.update({
+      where: { id: doc.id },
+      data: {
+        scanStatus: "REJECTED",
+        extractionStatus: "FAILED",
+        contentHash,
+      },
+    });
+    logger.warn("Document rejected", { documentId: doc.id, code: scan.code });
+    return;
+  }
+
+  const protectedKey = await fileStore.promoteToProtected(doc.objectKey, buffer);
+
+  await prisma.document.update({
+    where: { id: doc.id },
+    data: {
+      scanStatus: "CLEAN",
+      contentHash,
+      objectKey: protectedKey,
+      pages: scan.pages,
+      extractionStatus: "PROCESSING",
+    },
+  });
+
+  const text = extractTextFromBuffer(buffer, scan.detectedMime);
+  const aiResult = await aiGateway.runResumeExtract(text);
+
+  const route = await prisma.aiTaskRoute.findFirst({
+    where: { taskType: "RESUME_EXTRACTION", status: "PUBLISHED" },
+    include: { provider: true },
+  });
+
+  let aiRunId: string | undefined;
+  if (route) {
+    const run = await prisma.aiRun.create({
+      data: {
+        routeId: route.id,
+        userId: payload.userId,
+        taskType: "RESUME_EXTRACT",
+        status: aiResult.status,
+        inputHash: createHash("sha256").update(text).digest("hex"),
+        outputHash:
+          aiResult.status === "COMPLETED"
+            ? createHash("sha256").update(JSON.stringify(aiResult.value)).digest("hex")
+            : undefined,
+        errorCode: aiResult.status === "FAILED" ? aiResult.code : undefined,
+      },
+    });
+    aiRunId = run.id;
+  }
+
+  if (aiResult.status !== "COMPLETED") {
+    await prisma.document.update({
+      where: { id: doc.id },
+      data: { extractionStatus: "FAILED" },
+    });
+    return;
+  }
+
+  await prisma.document.update({
+    where: { id: doc.id },
+    data: { extractionStatus: "COMPLETE" },
+  });
+
+  const versions = await prisma.resumeVersion.findMany({ where: { documentId: doc.id } });
+  for (const version of versions) {
+    await prisma.resumeVersion.update({
+      where: { id: version.id },
+      data: {
+        extractedText: text.slice(0, 50000),
+        extractionStatus: "COMPLETE",
+        extractionData: {
+          ...aiResult.value,
+          aiRunId,
+          warnings: aiResult.warnings,
+        },
+      },
+    });
+  }
+
+  logger.info("Document processed", { documentId: doc.id, aiRunId });
+}
+
+async function processApplicationSubmit(payload: {
+  applicationId: string;
+  userId: string;
+  operationKey: string;
 }) {
-  if (event.eventType !== "application.submit") return;
-
-  const payload = event.payload as {
-    applicationId: string;
-    userId: string;
-    operationKey: string;
-  };
-
   const app = await prisma.application.findUniqueOrThrow({
     where: { id: payload.applicationId },
     include: { job: true },
@@ -59,7 +177,6 @@ async function processOutboxEvent(event: {
     },
   });
 
-  // Simulate connector execution
   await new Promise((r) => setTimeout(r, 500));
 
   const period = await prisma.entitlementPeriod.findFirst({
@@ -121,6 +238,24 @@ async function processOutboxEvent(event: {
   logger.info("Application submitted", { applicationId: payload.applicationId });
 }
 
+async function processOutboxEvent(event: {
+  id: string;
+  eventType: string;
+  aggregateId: string;
+  payload: unknown;
+}) {
+  if (event.eventType === "document.process") {
+    await processDocumentEvent(event.payload as { documentId: string; userId: string });
+    return;
+  }
+
+  if (event.eventType === "application.submit") {
+    await processApplicationSubmit(
+      event.payload as { applicationId: string; userId: string; operationKey: string },
+    );
+  }
+}
+
 async function pollOutbox() {
   const events = await prisma.outboxEvent.findMany({
     where: { state: "PENDING" },
@@ -152,6 +287,7 @@ async function pollOutbox() {
 
 async function main() {
   logger.info("Worker started");
+  await fileStore.ensureReady();
   await prisma.$connect();
 
   setInterval(() => {

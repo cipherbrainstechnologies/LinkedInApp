@@ -9,8 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@applyflow/auth": "workspace:*",
     "@applyflow/config": "workspace:*",
-    "fastify": "^5.2.1"
+    "fastify": "^5.2.1",
+    "@fastify/formbody": "^8.0.2"
   },
   "devDependencies": {
     "@applyflow/typescript-config": "workspace:*",

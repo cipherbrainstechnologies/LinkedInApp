@@ -13,6 +13,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@applyflow/ai": "workspace:*",
+    "@applyflow/storage": "workspace:*",
     "@applyflow/config": "workspace:*",
     "@applyflow/db": "workspace:*",
     "@applyflow/domain": "workspace:*",

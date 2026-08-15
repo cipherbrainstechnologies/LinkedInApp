@@ -1,0 +1,19 @@
+{
+  "name": "@applyflow/test-kit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@applyflow/ai": "workspace:*",
+    "@applyflow/auth": "workspace:*",
+    "@applyflow/storage": "workspace:*"
+  },
+  "devDependencies": {
+    "@applyflow/typescript-config": "workspace:*",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

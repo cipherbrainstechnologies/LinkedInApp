@@ -7,6 +7,7 @@ export function Nav() {
   const pathname = usePathname();
   const links = [
     { href: "/home", label: "Home" },
+    { href: "/resumes", label: "Resumes" },
     { href: "/discover", label: "Discover" },
     { href: "/applications", label: "Applications" },
     { href: "/plan", label: "Plan" },
