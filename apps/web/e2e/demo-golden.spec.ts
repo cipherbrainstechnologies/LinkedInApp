@@ -48,4 +48,14 @@ test.describe("DEMO-02 golden paths", () => {
     await page.goto("/plan");
     await expect(page.getByRole("heading", { name: /Plan & billing/i })).toBeVisible();
   });
+
+  test("prepare application from job detail", async ({ page }) => {
+    await demoLogin(page, "experienced-launch");
+    await page.goto("/discover");
+    await page.locator("ul li a").first().click();
+    await page.getByRole("button", { name: /Prepare application/i }).click();
+    await expect(page).toHaveURL(/\/applications\//);
+    await page.getByRole("button", { name: /Prepare screening/i }).click();
+    await expect(page.getByText(/Screening answers/i)).toBeVisible();
+  });
 });
