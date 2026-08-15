@@ -6,6 +6,7 @@ const steps = [
   ["typecheck", "pnpm typecheck"],
   ["test", "pnpm test"],
   ["build", "pnpm build"],
+  ["integration", "pnpm test:integration"],
 ];
 
 let failed = false;

@@ -459,7 +459,13 @@ async function main() {
       quotaLimit: 50,
       status: "ACTIVE",
     },
-    update: {},
+    update: {
+      planVersionId: launchVersion.id,
+      quotaLimit: 50,
+      status: "ACTIVE",
+      periodStart: now,
+      periodEnd,
+    },
   });
 
   await prisma.subscription.upsert({
@@ -472,7 +478,24 @@ async function main() {
       currentPeriodStart: now,
       currentPeriodEnd: periodEnd,
     },
-    update: {},
+    update: {
+      planVersionId: launchVersion.id,
+      state: "ACTIVE",
+      scheduledPlanVersionId: null,
+      cancelAtPeriodEnd: false,
+      currentPeriodStart: now,
+      currentPeriodEnd: periodEnd,
+    },
+  });
+
+  await prisma.quotaLedgerEntry.deleteMany({
+    where: {
+      userId: launchUser.id,
+      operationKey: { notIn: [
+        `seed-grant:${launchUser.id}`,
+        ...Array.from({ length: 20 }, (_, i) => `seed-consume:${launchUser.id}:${i}`),
+      ] },
+    },
   });
 
   // Grant 50, consume 20
@@ -506,6 +529,14 @@ async function main() {
       update: {},
     });
   }
+
+  await prisma.paymentTransaction.deleteMany({
+    where: { userId: launchUser.id, state: "PENDING" },
+  });
+
+  await prisma.idempotencyRecord.deleteMany({
+    where: { userId: launchUser.id, requestPath: "/billing/upgrade/confirm" },
+  });
 
   console.log("Seed complete.");
 }

@@ -1,6 +1,6 @@
 # ApplyFlow Build Status
 
-Last updated: 2026-08-15 (ONB + Admin AI + E2E)
+Last updated: 2026-08-15 (Billing hardening + demo gates)
 
 ## Milestones
 
@@ -10,11 +10,11 @@ Last updated: 2026-08-15 (ONB + Admin AI + E2E)
 | M1 Identity/Onboarding | Partial | OIDC, onboarding resumability, fresher path |
 | M2 Resumes/AI | Partial | Pipeline + admin AI routes skeleton |
 | M3 Jobs/Matching | Partial | Search, import, SSRF block |
-| M4 Applications/Connectors | Partial | Submit flow, worker outbox |
-| M5 Billing/Quota | Partial | Ledger, mock upgrade |
+| M4 Applications/Connectors | Partial | Golden path submit, tracker, worker scenarios |
+| M5 Billing/Quota | Partial | Proration preview, webhook idempotency, delta grant |
 | M6 Admin | Partial | RBAC, quota adjust, audit, AI admin |
 | M7 Mobile | Shell only | Expo placeholder |
-| M8 Hardening | Partial | Playwright golden path E2E |
+| M8 Hardening | Partial | verify + smoke + integration; Playwright BILL-02 |
 
 ## Recent deliverables
 
@@ -35,12 +35,33 @@ Last updated: 2026-08-15 (ONB + Admin AI + E2E)
 
 ### M8 E2E (DEMO-02)
 
-- `apps/web/playwright.config.ts` + `e2e/demo-golden.spec.ts` — login, onboarding, discover, applications, plan
+- `apps/web/playwright.config.ts` + `e2e/demo-golden.spec.ts` — login, onboarding, discover, applications, plan, upgrade
+
+### M5 billing (BILL-02..07)
+
+- `packages/domain/src/billing/upgrade.ts` — proration quote + quota delta (preserve usage)
+- `BillingService` — preview/confirm/idempotent webhook; separate unauthenticated mock webhook route
+- Plan page — human-readable preview, processing until webhook, demo simulate success/failure
+- Seed resets launch persona (20/50) after demo upgrades
+- Tests: `billing.upgrade.integration.test.ts`, `upgrade.test.ts`, E2E BILL-02
+
+### M8 demo gates (DEMO-01)
+
+- `scripts/verify.mjs` includes `pnpm test:integration`
+- `scripts/smoke.mjs` runs domain + config + integration when API healthy
+- `docs/DEMO_RESULTS.md` with command outcomes
 
 ## P0 Acceptance Criteria (selected)
 
 | ID | Status | Implementation | Tests |
 |----|--------|----------------|-------|
+| BILL-02 | Partial | Delta grant on upgrade; usage preserved | `billing.upgrade.integration.test.ts`, E2E |
+| BILL-03 | Partial | Server proration preview fields | integration preview test |
+| BILL-04 | Partial | Processing UI until webhook | plan page + integration mid-state |
+| BILL-05 | Partial | Failed webhook preserves plan | `billing.upgrade.integration.test.ts` |
+| BILL-06 | Partial | Webhook idempotency | `billing.upgrade.integration.test.ts` |
+| BILL-07 | Partial | Confirm idempotency key | `billing.upgrade.integration.test.ts` |
+| DEMO-01 | Partial | verify/smoke/integration gates | `scripts/verify.mjs`, `DEMO_RESULTS.md` |
 | APP-01 | Partial | Draft snapshots job/profile/resume/policy | applications API |
 | APP-02 | Partial | Prepare + confirm gate | `submission.test.ts`, integration |
 | APP-05 | Partial | Idempotent submit | `applications.submit.integration.test.ts` |
