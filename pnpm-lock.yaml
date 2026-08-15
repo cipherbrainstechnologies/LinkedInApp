@@ -20,6 +20,9 @@ importers:
       '@applyflow/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      '@applyflow/ui-web':
+        specifier: workspace:*
+        version: link:../../packages/ui-web
       next:
         specifier: ^15.2.0
         version: 15.5.23(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -179,6 +182,9 @@ importers:
       '@applyflow/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
+      '@applyflow/ui-web':
+        specifier: workspace:*
+        version: link:../../packages/ui-web
       '@tanstack/react-query':
         specifier: ^5.66.0
         version: 5.101.4(react@19.2.8)
@@ -243,6 +249,9 @@ importers:
       '@applyflow/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
       ioredis:
         specifier: ^5.4.2
         version: 5.11.1
@@ -500,6 +509,37 @@ importers:
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(tsx@4.23.12)
 
   packages/typescript-config: {}
+
+  packages/ui-web:
+    dependencies:
+      '@applyflow/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
+    devDependencies:
+      '@applyflow/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@applyflow/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/react':
+        specifier: ^19.0.10
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.4
+        version: 19.2.4(@types/react@19.2.18)
+      eslint:
+        specifier: ^9.20.0
+        version: 9.39.5(jiti@2.7.0)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
 
 packages:
 

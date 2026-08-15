@@ -15,7 +15,7 @@
     "build": "tsc",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
-    "migrate:deploy": "prisma migrate deploy",
+    "migrate:deploy": "node scripts/migrate-deploy.mjs",
     "seed": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",

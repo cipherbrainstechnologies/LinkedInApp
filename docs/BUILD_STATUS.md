@@ -1,82 +1,87 @@
 # ApplyFlow Build Status
 
-Last updated: 2026-08-15 (Billing hardening + demo gates)
+Last updated: 2026-08-15 (Railway hosting readiness)
 
 ## Milestones
 
 | Milestone | Status | Notes |
 |-----------|--------|-------|
-| M0 Foundation | Done | Monorepo, scripts, CI skeleton |
+| M0 Foundation | Done | Monorepo, bootstrap, Turbo dev deps, Compose 55432 |
 | M1 Identity/Onboarding | Partial | OIDC, onboarding resumability, fresher path |
-| M2 Resumes/AI | Partial | Pipeline + admin AI routes skeleton |
+| M2 Resumes/AI | Partial | Pipeline + admin AI routes |
 | M3 Jobs/Matching | Partial | Search, import, SSRF block |
 | M4 Applications/Connectors | Partial | Golden path submit, tracker, worker scenarios |
 | M5 Billing/Quota | Partial | Proration preview, webhook idempotency, delta grant |
-| M6 Admin | Partial | RBAC, quota adjust, audit, AI admin |
+| M6 Admin | Partial | Server session login, RBAC guards, dashboard, users, AI, audit |
 | M7 Mobile | Shell only | Expo placeholder |
-| M8 Hardening | Partial | verify + smoke + integration; Playwright BILL-02 |
+| M8 Hardening | Partial | verify + smoke + integration + Playwright (13 E2E) |
+| M9 UI/UX | Partial | Design tokens, ui-web, candidate flows, mobile nav |
+| M10 Railway | Done | Per-service railway.json, PORT, migrations, docs/RAILWAY.md |
 
-## Recent deliverables
+## Recent deliverables (UI/UX slice)
 
-### M1 onboarding (ONB-01..04)
+### Design system (`packages/ui-web`, `packages/design-tokens`)
 
-- Extended `validateOnboardingCompletion` — fresher education/projects/skills, work auth, multiple titles
-- `GET /onboarding` returns saved step + server-backed fields (ONB-04)
-- Profile `POST /profile/work-authorisations`
-- Web onboarding wizard restores progress from API
-- Tests: `packages/domain/src/onboarding/completion.test.ts`, `onboarding.resumability.integration.test.ts`
+- Semantic indigo/violet/cyan token palette
+- Shared primitives: Card, KpiCard, PageHeader, Badge, EmptyState, PipelineHero
+- Candidate + admin shells import `@applyflow/ui-web/styles.css`
 
-### M2 admin AI (AI-05/06)
+### Admin platform (`apps/admin`, `apps/api`)
 
-- `GET/POST /admin/ai/providers` — write-only secret storage (fingerprint only)
-- `GET/POST /admin/ai/routes`, `POST /admin/ai/routes/:id/publish` — eval threshold gate
-- Admin web AI panel; seed `ai@demo.applyflow.local`; ops role has `ai.manage`
-- Tests: `packages/domain/src/ai/route-publish.test.ts`, `admin-ai.integration.test.ts`
+- `AdminSession` model + cookie `applyflow_admin_session` (localhost domain in local env)
+- `POST /admin/auth/demo/login`, `POST /logout`, `GET /me`
+- `AdminAuthGuard` + `AdminRbacService` permission checks on admin routes
+- Admin routes: dashboard, users (+ detail), applications, plans, AI providers, reports, audit, demo center
+- Login page with server-backed Demo Admin action (not header spoofing)
 
-### M8 E2E (DEMO-02)
+### Candidate experience (`apps/web`)
 
-- `apps/web/playwright.config.ts` + `e2e/demo-golden.spec.ts` — login, onboarding, discover, applications, plan, upgrade
+- Redesigned Nav with demo badge and Help & demo link
+- Home dashboard: pipeline hero, KPI cards, application status summary
+- Help page: dismissible presentation checklist with local restart
 
-### M5 billing (BILL-02..07)
+### Developer experience
 
-- `packages/domain/src/billing/upgrade.ts` — proration quote + quota delta (preserve usage)
-- `BillingService` — preview/confirm/idempotent webhook; separate unauthenticated mock webhook route
-- Plan page — human-readable preview, processing until webhook, demo simulate success/failure
-- Seed resets launch persona (20/50) after demo upgrades
-- Tests: `billing.upgrade.integration.test.ts`, `upgrade.test.ts`, E2E BILL-02
+- `pnpm bootstrap` builds internal packages including ui-web
+- `turbo.json` `dev.dependsOn: ["^build"]`
+- Root `pnpm dev` without deprecated `--parallel`
+- `migrate-deploy.mjs` loads root `.env`
+- Compose PostgreSQL `127.0.0.1:55432:5432`
+- Worker declares `dotenv` dependency
 
-### M8 demo gates (DEMO-01)
+### Documentation
 
-- `scripts/verify.mjs` includes `pnpm test:integration`
-- `scripts/smoke.mjs` runs domain + config + integration when API healthy
-- `docs/DEMO_RESULTS.md` with command outcomes
+- `docs/implementation/UI_UX_REBUILD_PLAN.md` — route inventory and migration sequence
+- `docs/DEMO_PRESENTATION_GUIDE.md` — startup, personas, candidate/admin scripts
+- Root `README.md` rewritten for verified startup flow
+
+### Tests
+
+- `admin.auth.integration.test.ts` (3 tests)
+- `apps/web/e2e/admin-demo.spec.ts` (5 admin auth E2E tests)
+- Playwright golden paths updated (help tour, Welcome back heading)
+- API integration: **16 tests** passing
 
 ## P0 Acceptance Criteria (selected)
 
 | ID | Status | Implementation | Tests |
 |----|--------|----------------|-------|
-| BILL-02 | Partial | Delta grant on upgrade; usage preserved | `billing.upgrade.integration.test.ts`, E2E |
-| BILL-03 | Partial | Server proration preview fields | integration preview test |
-| BILL-04 | Partial | Processing UI until webhook | plan page + integration mid-state |
-| BILL-05 | Partial | Failed webhook preserves plan | `billing.upgrade.integration.test.ts` |
-| BILL-06 | Partial | Webhook idempotency | `billing.upgrade.integration.test.ts` |
-| BILL-07 | Partial | Confirm idempotency key | `billing.upgrade.integration.test.ts` |
-| DEMO-01 | Partial | verify/smoke/integration gates | `scripts/verify.mjs`, `DEMO_RESULTS.md` |
-| APP-01 | Partial | Draft snapshots job/profile/resume/policy | applications API |
-| APP-02 | Partial | Prepare + confirm gate | `submission.test.ts`, integration |
-| APP-05 | Partial | Idempotent submit | `applications.submit.integration.test.ts` |
-| APP-08 | Partial | OTP/CAPTCHA → WAITING_FOR_USER | worker scenarios |
-| APP-10 | Partial | Uncertain → verified submit | worker scenario |
-| APP-11 | Partial | Final failure releases quota | worker scenario |
-| APP-12 | Partial | Duplicate prevention | integration test |
-| TRK-01 | Partial | Search/filter URL state | web applications |
-| TRK-02 | Partial | Detail timeline/snapshot/evidence | web application detail |
-| ONB-01 | Partial | Onboarding + profile + resume | domain + integration |
-| ONB-02 | Partial | Fresher path without experience | `completion.test.ts` |
-| ONB-03 | Partial | Unconfirmed extraction blockers | onboarding complete |
-| ONB-04 | Partial | Resumable onboarding GET | `onboarding.resumability.integration.test.ts` |
-| AI-05 | Partial | Publish eval threshold | `route-publish.test.ts`, `admin-ai.integration.test.ts` |
-| AI-06 | Partial | Secret fingerprint only | `admin-ai.integration.test.ts` |
-| DEMO-02 | Partial | Playwright golden paths | `apps/web/e2e/demo-golden.spec.ts` |
-| AUTH-04 | Partial | Refresh rotation | `auth.refresh.integration.test.ts` |
-| RES-03 | Partial | Advisory lock activate | `resume.activate.integration.test.ts` |
+| AF-FND-001 | Partial | bootstrap + migrate + dev without manual package builds | bootstrap script, README |
+| AF-ADM-001 | Done | Admin login page + demo session API | admin-demo E2E |
+| AF-ADM-002 | Partial | Demo login gated on APP_ENV + DEMO_AUTH_ENABLED | controller guard |
+| AF-ADM-003 | Done | Admin shell nav, identity, logout | admin-demo E2E |
+| AF-OPS-001 | Partial | Dashboard KPIs from `/admin/overview` | seed + admin UI |
+| AF-OPS-004 | Partial | Masked AI keys, test connection mock | admin-ai integration |
+| AF-CAN-001 | Partial | Home dashboard KPIs and next action | demo-golden E2E |
+| AF-DEMO-001 | Partial | Help checklist + restart | demo-golden E2E |
+| AF-DEMO-002 | Partial | Admin demo center + presentation guide | DEMO_PRESENTATION_GUIDE |
+| BILL-02..07 | Partial | Billing upgrade slice | billing integration + E2E |
+
+## Open items
+
+- Full `pnpm verify` lint gate (ESLint flat config missing in several packages — pre-existing)
+- Admin charts library for reports (tables/KPIs only today)
+- Production OIDC admin login (demo session only in local)
+- Full KMS envelope for AI provider secrets (fingerprint + secretRef stub)
+- WCAG automated audit beyond placeholder `test:a11y`
+- Visual regression screenshots in `docs/screenshots/`

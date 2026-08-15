@@ -8,7 +8,7 @@ import { NestFactory } from "@nestjs/core";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import fastifyCookie from "@fastify/cookie";
 import fastifyCors from "@fastify/cors";
-import { getConfig } from "@applyflow/config";
+import { getConfig, resolveListenPort } from "@applyflow/config";
 import { createLogger } from "@applyflow/observability";
 import { AppModule } from "./app.module.js";
 
@@ -33,8 +33,8 @@ async function bootstrap() {
 
   app.setGlobalPrefix("v1", { exclude: ["health", "healthz"] });
 
-  await app.listen(config.API_PORT, "0.0.0.0");
-  logger.info("API listening", { port: config.API_PORT, env: config.APP_ENV });
+  await app.listen(resolveListenPort(config.API_PORT), "0.0.0.0");
+  logger.info("API listening", { port: resolveListenPort(config.API_PORT), env: config.APP_ENV });
 }
 
 bootstrap().catch((err) => {

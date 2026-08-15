@@ -1,23 +1,82 @@
 :root {
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-success: #16a34a;
-  --color-warning: #d97706;
-  --color-error: #dc2626;
-  --color-background: #ffffff;
-  --color-surface: #f8fafc;
-  --color-text: #0f172a;
-  --color-text-muted: #64748b;
+  /* Brand — electric indigo system */
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-secondary-600: #7c3aed;
+  --color-accent-500: #06b6d4;
+  --color-success-600: #059669;
+  --color-warning-600: #d97706;
+  --color-danger-600: #dc2626;
+  --color-ink-950: #0f172a;
+  --color-ink-800: #1e293b;
+  --color-ink-600: #475569;
+  --color-ink-400: #94a3b8;
+  --color-canvas: #f8fafc;
+  --color-canvas-subtle: #f1f5f9;
+  --color-surface-raised: #ffffff;
+
+  /* Semantic aliases */
+  --color-primary: var(--color-primary-600);
+  --color-primary-hover: var(--color-primary-700);
+  --color-secondary: var(--color-secondary-600);
+  --color-accent: var(--color-accent-500);
+  --color-success: var(--color-success-600);
+  --color-warning: var(--color-warning-600);
+  --color-error: var(--color-danger-600);
+  --color-background: var(--color-canvas);
+  --color-surface: var(--color-surface-raised);
+  --color-text: var(--color-ink-950);
+  --color-text-muted: var(--color-ink-600);
   --color-border: #e2e8f0;
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --radius-sm: 0.25rem;
+  --color-border-strong: #cbd5e1;
+
+  /* Admin rail */
+  --color-admin-rail: var(--color-ink-950);
+  --color-admin-rail-text: #e2e8f0;
+  --color-admin-rail-active: var(--color-primary-600);
+
+  /* Status */
+  --color-status-info-bg: #eff6ff;
+  --color-status-info-text: #1d4ed8;
+  --color-status-success-bg: #ecfdf5;
+  --color-status-success-text: #047857;
+  --color-status-warning-bg: #fffbeb;
+  --color-status-warning-text: #b45309;
+  --color-status-danger-bg: #fef2f2;
+  --color-status-danger-text: #b91c1c;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-display: var(--font-sans);
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
   --space-lg: 1.5rem;
   --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05);
+  --shadow-md: 0 4px 12px rgb(15 23 42 / 0.08);
+  --shadow-lg: 0 12px 32px rgb(15 23 42 / 0.12);
+
+  --sidebar-width: 260px;
+  --header-height: 56px;
+  --content-max: 1200px;
 }
 
 @media (prefers-reduced-motion: reduce) {

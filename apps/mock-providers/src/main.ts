@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import formbody from "@fastify/formbody";
 import { randomBytes } from "node:crypto";
-import { getConfig } from "@applyflow/config";
+import { getConfig, resolveListenPort } from "@applyflow/config";
 import { signIdToken, verifyCodeChallenge } from "@applyflow/auth";
 
 const config = getConfig();
@@ -116,7 +116,9 @@ app.get("/", async () => ({
   oidc: `${config.OIDC_ISSUER_URL}/authorize`,
 }));
 
-app.listen({ port: config.MOCK_PROVIDERS_PORT, host: "0.0.0.0" });
+  const port = resolveListenPort(config.MOCK_PROVIDERS_PORT);
+  await app.listen({ port, host: "0.0.0.0" });
+  console.log(`Mock providers listening on ${port}`);
 }
 
 main().catch((err) => {
