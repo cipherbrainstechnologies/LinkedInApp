@@ -2,6 +2,7 @@ import { Body, Controller, Get, Headers, Param, Post, Query } from "@nestjs/comm
 import { Module } from "@nestjs/common";
 import { PrismaService } from "../../platform/prisma.service.js";
 import { QuotaService } from "../../platform/quota.service.js";
+import { AdminAiController } from "./admin-ai.controller.js";
 
 @Controller("admin")
 class AdminController {
@@ -156,5 +157,5 @@ class AdminController {
   }
 }
 
-@Module({ controllers: [AdminController] })
+@Module({ controllers: [AdminController, AdminAiController] })
 export class AdminModule {}

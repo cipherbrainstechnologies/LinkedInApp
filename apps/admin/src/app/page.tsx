@@ -8,6 +8,8 @@ export default function AdminPage() {
   const [adminEmail, setAdminEmail] = useState("support@demo.applyflow.local");
   const [customers, setCustomers] = useState<Array<{ id: string; email: string | null }>>([]);
   const [audit, setAudit] = useState<Array<{ action: string; createdAt: string }>>([]);
+  const [aiProviders, setAiProviders] = useState<Array<{ id: string; displayName: string; secretFingerprint: string | null }>>([]);
+  const [aiRoutes, setAiRoutes] = useState<Array<{ id: string; taskType: string; status: string }>>([]);
   const [message, setMessage] = useState("");
 
   async function searchCustomers() {
@@ -36,6 +38,37 @@ export default function AdminPage() {
     loadAudit();
   }
 
+  async function loadAi() {
+    const [providersRes, routesRes] = await Promise.all([
+      fetch(`${API}/admin/ai/providers`, { headers: { "x-admin-email": adminEmail } }),
+      fetch(`${API}/admin/ai/routes`, { headers: { "x-admin-email": adminEmail } }),
+    ]);
+    if (providersRes.ok) {
+      const data = await providersRes.json();
+      setAiProviders(data.providers ?? []);
+    }
+    if (routesRes.ok) {
+      const data = await routesRes.json();
+      setAiRoutes(data.routes ?? []);
+    }
+  }
+
+  async function storeMockSecret() {
+    const res = await fetch(`${API}/admin/ai/providers`, {
+      method: "POST",
+      headers: { "x-admin-email": adminEmail, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        providerType: "mock",
+        displayName: "Demo stored secret",
+        apiKey: "sk-demo-write-only-secret",
+      }),
+    });
+    const data = await res.json();
+    setMessage(res.ok ? `Secret stored (fingerprint ${data.secretFingerprint})` : data.message ?? "Failed");
+    loadAi();
+    loadAudit();
+  }
+
   return (
     <main className="container">
       <h1>ApplyFlow Admin</h1>
@@ -45,7 +78,8 @@ export default function AdminPage() {
           <select value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)}>
             <option value="support@demo.applyflow.local">Support</option>
             <option value="finance@demo.applyflow.local">Finance</option>
-            <option value="ops@demo.applyflow.local">Ops</option>
+            <option value="ops@demo.applyflow.local">Ops / AI</option>
+            <option value="ai@demo.applyflow.local">AI admin</option>
             <option value="auditor@demo.applyflow.local">Auditor</option>
           </select>
         </label>
@@ -53,6 +87,7 @@ export default function AdminPage() {
       <div className="card">
         <button className="btn" onClick={searchCustomers}>Search customers</button>
         <button className="btn" onClick={loadAudit}>Load audit log</button>
+        <button className="btn" onClick={loadAi}>Load AI config</button>
         {message && <p>{message}</p>}
         <ul>
           {customers.map((c) => (
@@ -60,6 +95,21 @@ export default function AdminPage() {
               {c.email ?? c.id}
               <button className="btn btn-primary" onClick={() => adjustQuota(c.id)}>+1 quota</button>
             </li>
+          ))}
+        </ul>
+      </div>
+      <div className="card">
+        <h2>AI providers (write-only secrets)</h2>
+        <button className="btn btn-secondary" onClick={storeMockSecret}>Store mock API key</button>
+        <ul>
+          {aiProviders.map((p) => (
+            <li key={p.id}>{p.displayName} — fingerprint {p.secretFingerprint ?? "none"}</li>
+          ))}
+        </ul>
+        <h3>Routes</h3>
+        <ul>
+          {aiRoutes.map((r) => (
+            <li key={r.id}>{r.taskType} — {r.status}</li>
           ))}
         </ul>
       </div>

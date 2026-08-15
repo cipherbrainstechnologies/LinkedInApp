@@ -6,29 +6,49 @@ import { PrismaService } from "../../platform/prisma.service.js";
 
 @Controller("onboarding")
 @UseGuards(AuthGuard)
-class OnboardingController {
+export class OnboardingController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
   async getOnboarding(@CurrentUserId() userId: string) {
     const user = await this.prisma.client.user.findUniqueOrThrow({ where: { id: userId } });
     const profile = await this.prisma.client.candidateProfile.findUnique({ where: { userId } });
-    const targets = await this.prisma.client.jobTarget.count({ where: { userId } });
+    const targets = await this.prisma.client.jobTarget.findMany({
+      where: { userId },
+      orderBy: { priority: "asc" },
+    });
+    const preferences = await this.prisma.client.candidatePreference.findUnique({ where: { userId } });
     const activeResume = await this.prisma.client.resume.findFirst({ where: { userId, isActive: true } });
     const consent = await this.prisma.client.consent.findFirst({
       where: { userId, purpose: "ONBOARDING", decision: "GRANTED" },
     });
+    const experienceCount = await this.prisma.client.experience.count({ where: { userId } });
+    const educationCount = await this.prisma.client.education.count({ where: { userId } });
+    const projectCount = await this.prisma.client.project.count({ where: { userId } });
+    const skillCount = await this.prisma.client.candidateSkill.count({ where: { userId } });
+    const workAuthCount = await this.prisma.client.workAuthorisation.count({ where: { userId } });
 
     return {
       path: user.onboardingPath,
       state: user.onboardingState,
       step: user.onboardingStep,
+      saved: {
+        preferredName: profile?.preferredName ?? null,
+        targets: targets.map((t) => t.title),
+        locations: preferences?.locations ?? [],
+        remoteModes: preferences?.remoteModes ?? [],
+      },
       progress: {
         hasPath: !!user.onboardingPath,
-        hasContact: !!profile,
-        hasTargets: targets > 0,
+        hasContact: !!profile?.preferredName,
+        hasTargets: targets.length > 0,
         hasActiveResume: !!activeResume,
         hasConsent: !!consent,
+        hasWorkAuthorisation: workAuthCount > 0,
+        experienceCount,
+        educationCount,
+        projectCount,
+        skillCount,
       },
     };
   }
@@ -50,7 +70,7 @@ class OnboardingController {
       update: {},
     });
 
-    return { path: body.path };
+    return { path: body.path, step: "contact" };
   }
 
   @Put("contact")
@@ -76,7 +96,7 @@ class OnboardingController {
       data: { onboardingStep: "targets" },
     });
 
-    return { saved: true };
+    return { saved: true, step: "targets" };
   }
 
   @Put("targets")
@@ -108,27 +128,35 @@ class OnboardingController {
       });
     }
 
+    const user = await this.prisma.client.user.findUniqueOrThrow({ where: { id: userId } });
+    const nextStep = user.onboardingPath === "FRESHER" ? "education" : "resume";
+
     await this.prisma.client.user.update({
       where: { id: userId },
-      data: { onboardingStep: "resume" },
+      data: { onboardingStep: nextStep },
     });
 
-    return { saved: true, count: body.titles.length };
+    return { saved: true, count: body.titles.length, step: nextStep };
   }
 
   @Post("consent")
   async grantConsent(@CurrentUserId() userId: string) {
-    await this.prisma.client.consent.create({
-      data: {
-        userId,
-        purpose: "ONBOARDING",
-        scopeType: "USER",
-        scopeId: userId,
-        copyVersion: "1.0",
-        decision: "GRANTED",
-        grantedAt: new Date(),
-      },
+    const existing = await this.prisma.client.consent.findFirst({
+      where: { userId, purpose: "ONBOARDING", decision: "GRANTED" },
     });
+    if (!existing) {
+      await this.prisma.client.consent.create({
+        data: {
+          userId,
+          purpose: "ONBOARDING",
+          scopeType: "USER",
+          scopeId: userId,
+          copyVersion: "1.0",
+          decision: "GRANTED",
+          grantedAt: new Date(),
+        },
+      });
+    }
     return { granted: true };
   }
 
@@ -137,6 +165,8 @@ class OnboardingController {
     const user = await this.prisma.client.user.findUniqueOrThrow({ where: { id: userId } });
     const experiences = await this.prisma.client.experience.count({ where: { userId } });
     const educations = await this.prisma.client.education.count({ where: { userId } });
+    const projects = await this.prisma.client.project.count({ where: { userId } });
+    const skills = await this.prisma.client.candidateSkill.count({ where: { userId } });
     const targets = await this.prisma.client.jobTarget.count({ where: { userId } });
     const prefs = await this.prisma.client.candidatePreference.findUnique({ where: { userId } });
     const activeResume = await this.prisma.client.resume.findFirst({ where: { userId, isActive: true } });
@@ -146,19 +176,53 @@ class OnboardingController {
     const primaryEmail = await this.prisma.client.email.findFirst({
       where: { userId, isPrimary: true, verified: true },
     });
+    const profile = await this.prisma.client.candidateProfile.findUnique({ where: { userId } });
+    const workAuth = await this.prisma.client.workAuthorisation.count({ where: { userId } });
+
+    const unconfirmedProfile = await this.prisma.client.experience.count({
+      where: { userId, confirmationState: { not: "CONFIRMED" } },
+    });
+    const unconfirmedEducation = await this.prisma.client.education.count({
+      where: { userId, confirmationState: { not: "CONFIRMED" } },
+    });
+    const unconfirmedProjects = await this.prisma.client.project.count({
+      where: { userId, confirmationState: { not: "CONFIRMED" } },
+    });
+    const unconfirmedSkills = await this.prisma.client.candidateSkill.count({
+      where: { userId, confirmationState: { not: "CONFIRMED" } },
+    });
+    const unreviewedResume = activeResume
+      ? await this.prisma.client.resumeVersion.findFirst({
+          where: {
+            resumeId: activeResume.id,
+            extractionStatus: "COMPLETE",
+            reviewedAt: null,
+          },
+        })
+      : null;
 
     const blockers = validateOnboardingCompletion({
       onboardingState: user.onboardingState,
       hasVerifiedEmail: !!primaryEmail,
-      hasContact: !!(await this.prisma.client.candidateProfile.findUnique({ where: { userId } }))?.preferredName,
+      hasContact: !!profile?.preferredName,
       hasTargetTitle: targets > 0,
-      hasLocationPreference: (prefs?.locations?.length ?? 0) > 0 || (prefs?.remoteModes?.length ?? 0) > 0,
+      targetCount: targets,
+      hasLocationPreference:
+        (prefs?.locations?.length ?? 0) > 0 || (prefs?.remoteModes?.length ?? 0) > 0,
       hasActiveResume: !!activeResume,
       hasRequiredConsent: !!consent,
-      hasUnconfirmedRequiredFields: false,
+      hasWorkAuthorisation: workAuth > 0,
+      hasUnconfirmedRequiredFields:
+        unconfirmedProfile > 0 ||
+        unconfirmedEducation > 0 ||
+        unconfirmedProjects > 0 ||
+        unconfirmedSkills > 0 ||
+        !!unreviewedResume,
       path: user.onboardingPath as "EXPERIENCED" | "FRESHER" | null,
       experienceCount: experiences,
       educationCount: educations,
+      projectCount: projects,
+      skillCount: skills,
     });
 
     if (blockers.length > 0) {

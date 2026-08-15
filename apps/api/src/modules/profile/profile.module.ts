@@ -5,7 +5,7 @@ import { PrismaService } from "../../platform/prisma.service.js";
 
 @Controller("profile")
 @UseGuards(AuthGuard)
-class ProfileController {
+export class ProfileController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
@@ -27,7 +27,10 @@ class ProfileController {
   }
 
   @Patch()
-  async updateProfile(@CurrentUserId() userId: string, @Body() body: { summary?: string; noticePeriodDays?: number }) {
+  async updateProfile(
+    @CurrentUserId() userId: string,
+    @Body() body: { summary?: string; noticePeriodDays?: number },
+  ) {
     const profile = await this.prisma.client.candidateProfile.upsert({
       where: { userId },
       create: { userId, ...body },
@@ -39,10 +42,26 @@ class ProfileController {
   @Post("experiences")
   async addExperience(
     @CurrentUserId() userId: string,
-    @Body() body: { employer: string; title: string; isCurrent?: boolean; description?: string },
+    @Body()
+    body: {
+      employer: string;
+      title: string;
+      isCurrent?: boolean;
+      description?: string;
+      source?: string;
+      confirmationState?: string;
+    },
   ) {
     return this.prisma.client.experience.create({
-      data: { userId, ...body, confirmationState: "CONFIRMED" },
+      data: {
+        userId,
+        employer: body.employer,
+        title: body.title,
+        isCurrent: body.isCurrent,
+        description: body.description,
+        source: body.source ?? "USER",
+        confirmationState: body.confirmationState ?? "CONFIRMED",
+      },
     });
   }
 
@@ -71,6 +90,29 @@ class ProfileController {
     return this.prisma.client.candidateSkill.create({
       data: { userId, ...body, confirmationState: "CONFIRMED" },
     });
+  }
+
+  @Post("work-authorisations")
+  async addWorkAuthorisation(
+    @CurrentUserId() userId: string,
+    @Body() body: { country: string; status: string; sponsorshipRequired?: boolean },
+  ) {
+    const record = await this.prisma.client.workAuthorisation.create({
+      data: {
+        userId,
+        country: body.country,
+        status: body.status,
+        sponsorshipRequired: body.sponsorshipRequired ?? false,
+        confirmationState: "CONFIRMED",
+      },
+    });
+
+    await this.prisma.client.user.update({
+      where: { id: userId },
+      data: { onboardingStep: "consent" },
+    });
+
+    return record;
   }
 }
 
