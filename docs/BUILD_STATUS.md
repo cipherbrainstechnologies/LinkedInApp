@@ -1,53 +1,52 @@
 # ApplyFlow Build Status
 
-Last updated: 2026-08-14 (M1 OIDC/email/refresh + M2 resume/AI)
+Last updated: 2026-08-15 (ONB + Admin AI + E2E)
 
 ## Milestones
 
 | Milestone | Status | Notes |
 |-----------|--------|-------|
 | M0 Foundation | Done | Monorepo, scripts, CI skeleton |
-| M1 Identity/Onboarding | Partial | OIDC mock, email verify, refresh rotation, sessions API |
-| M2 Resumes/AI | Partial | Scan pipeline, mock AI gateway, review UI |
+| M1 Identity/Onboarding | Partial | OIDC, onboarding resumability, fresher path |
+| M2 Resumes/AI | Partial | Pipeline + admin AI routes skeleton |
 | M3 Jobs/Matching | Partial | Search, import, SSRF block |
 | M4 Applications/Connectors | Partial | Submit flow, worker outbox |
 | M5 Billing/Quota | Partial | Ledger, mock upgrade |
-| M6 Admin | Partial | RBAC, quota adjust, audit |
+| M6 Admin | Partial | RBAC, quota adjust, audit, AI admin |
 | M7 Mobile | Shell only | Expo placeholder |
-| M8 Hardening | Pending | E2E partial |
+| M8 Hardening | Partial | Playwright golden path E2E |
 
-## M1 deliverables (this iteration)
+## Recent deliverables
 
-- `packages/auth` — PKCE, OIDC start params, JWT access/id token sign/verify (`jose`)
-- `apps/mock-providers` — Mock OIDC at `/oidc` with `with-email` / `no-email` personas (AUTH-03)
-- API — `GET /auth/oidc/start|callback`, LinkedIn stubs, `POST /auth/email/start|verify`, `POST /auth/token/refresh`, `GET/DELETE /sessions`
-- `JwtService`, `OidcStateService` (Redis), `SessionService` mobile credentials + refresh family revoke on reuse
-- `AuthGuard` — Bearer JWT or session cookie
-- Web — OIDC button on `/login`, `/verify-email` page
-- Tests — AUTH-02 in `packages/test-kit`, AUTH-04 integration in `apps/api`
+### M1 onboarding (ONB-01..04)
 
-## M2 deliverables (prior iteration)
+- Extended `validateOnboardingCompletion` — fresher education/projects/skills, work auth, multiple titles
+- `GET /onboarding` returns saved step + server-backed fields (ONB-04)
+- Profile `POST /profile/work-authorisations`
+- Web onboarding wizard restores progress from API
+- Tests: `packages/domain/src/onboarding/completion.test.ts`, `onboarding.resumability.integration.test.ts`
 
-- `packages/storage` — MIME magic-byte check, mock virus scan, local quarantine store, text extract
-- `packages/ai` — Gateway + deterministic mock `RESUME_EXTRACT`, hostile prompt handling
-- Worker `document.process` — scan → promote → extract → AI → resume version update
-- API — upload binary, status polling, extraction review endpoints
-- Web `/resumes` — upload demo PDF, poll status, review extraction, activate
-- `packages/test-kit` — RES-01/02, AI-03/04 unit acceptance tests
+### M2 admin AI (AI-05/06)
 
-## P0 Acceptance Criteria
+- `GET/POST /admin/ai/providers` — write-only secret storage (fingerprint only)
+- `GET/POST /admin/ai/routes`, `POST /admin/ai/routes/:id/publish` — eval threshold gate
+- Admin web AI panel; seed `ai@demo.applyflow.local`; ops role has `ai.manage`
+- Tests: `packages/domain/src/ai/route-publish.test.ts`, `admin-ai.integration.test.ts`
+
+### M8 E2E (DEMO-02)
+
+- `apps/web/playwright.config.ts` + `e2e/demo-golden.spec.ts` — login, onboarding, discover, applications, plan
+
+## P0 Acceptance Criteria (selected)
 
 | ID | Status | Implementation | Tests |
 |----|--------|----------------|-------|
-| AUTH-01 | Partial | OIDC callback + identity link | Manual + integration pending |
-| AUTH-02 | Partial | `verifyIdToken` + security events | `packages/test-kit/src/auth.acceptance.test.ts` |
-| AUTH-03 | Partial | no-email persona + `/verify-email` | Manual |
-| AUTH-04 | Partial | `SessionService.rotateRefreshToken` | `apps/api/src/modules/auth/auth.refresh.integration.test.ts` |
-| AUTH-05 | Partial | `GET/DELETE /sessions` | Pending |
-| RES-01 | Partial | Quarantine + worker scan | `packages/test-kit` |
-| RES-02 | Partial | Scan rejection | `packages/test-kit` |
-| RES-03 | Partial | Transactional activate | Pending integration |
-| RES-04 | Partial | Immutable resume versions | Schema |
-| AI-01 | Partial | Mock adapter | `packages/ai` tests |
-| AI-03 | Partial | Hostile prompt bounded | `packages/ai` + test-kit |
-| AI-04 | Partial | Failed extraction path | `packages/ai` tests |
+| ONB-01 | Partial | Onboarding + profile + resume | domain + integration |
+| ONB-02 | Partial | Fresher path without experience | `completion.test.ts` |
+| ONB-03 | Partial | Unconfirmed extraction blockers | onboarding complete |
+| ONB-04 | Partial | Resumable onboarding GET | `onboarding.resumability.integration.test.ts` |
+| AI-05 | Partial | Publish eval threshold | `route-publish.test.ts`, `admin-ai.integration.test.ts` |
+| AI-06 | Partial | Secret fingerprint only | `admin-ai.integration.test.ts` |
+| DEMO-02 | Partial | Playwright golden paths | `apps/web/e2e/demo-golden.spec.ts` |
+| AUTH-04 | Partial | Refresh rotation | `auth.refresh.integration.test.ts` |
+| RES-03 | Partial | Advisory lock activate | `resume.activate.integration.test.ts` |
