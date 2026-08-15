@@ -41,6 +41,15 @@ Last updated: 2026-08-15 (ONB + Admin AI + E2E)
 
 | ID | Status | Implementation | Tests |
 |----|--------|----------------|-------|
+| APP-01 | Partial | Draft snapshots job/profile/resume/policy | applications API |
+| APP-02 | Partial | Prepare + confirm gate | `submission.test.ts`, integration |
+| APP-05 | Partial | Idempotent submit | `applications.submit.integration.test.ts` |
+| APP-08 | Partial | OTP/CAPTCHA → WAITING_FOR_USER | worker scenarios |
+| APP-10 | Partial | Uncertain → verified submit | worker scenario |
+| APP-11 | Partial | Final failure releases quota | worker scenario |
+| APP-12 | Partial | Duplicate prevention | integration test |
+| TRK-01 | Partial | Search/filter URL state | web applications |
+| TRK-02 | Partial | Detail timeline/snapshot/evidence | web application detail |
 | ONB-01 | Partial | Onboarding + profile + resume | domain + integration |
 | ONB-02 | Partial | Fresher path without experience | `completion.test.ts` |
 | ONB-03 | Partial | Unconfirmed extraction blockers | onboarding complete |

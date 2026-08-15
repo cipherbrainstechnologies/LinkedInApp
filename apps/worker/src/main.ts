@@ -141,8 +141,9 @@ async function processApplicationSubmit(payload: {
     include: { job: true },
   });
 
+  const domain = app.job?.domain ?? "mock-ats.applyflow.local";
   const policy = await prisma.domainPolicy.findFirst({
-    where: { domain: app.job?.domain ?? "mock-ats.applyflow.local" },
+    where: { domain },
   });
 
   if (policy?.killSwitchActive) {
@@ -177,8 +178,110 @@ async function processApplicationSubmit(payload: {
     },
   });
 
-  await new Promise((r) => setTimeout(r, 500));
+  await new Promise((r) => setTimeout(r, 300));
 
+  const fingerprint = app.job?.fingerprint ?? "";
+  const scenario = fingerprint.includes("scenario:otp")
+    ? "OTP"
+    : fingerprint.includes("scenario:captcha")
+      ? "CAPTCHA"
+      : fingerprint.includes("scenario:uncertain")
+        ? "UNCERTAIN"
+        : fingerprint.includes("scenario:final-failure")
+          ? "FINAL_FAILURE"
+          : "SUCCESS";
+
+  if (scenario === "OTP") {
+    await prisma.application.update({
+      where: { id: payload.applicationId },
+      data: {
+        state: "WAITING_FOR_USER",
+        nextAction: "COMPLETE_OTP",
+        nextActionDetail: { safeMessage: "Enter the one-time code on the employer site. ApplyFlow cannot bypass OTP." },
+      },
+    });
+    await prisma.applicationEvent.create({
+      data: {
+        applicationId: payload.applicationId,
+        eventType: "WAITING_FOR_USER",
+        actorType: "SYSTEM",
+        metadata: { reason: "OTP_REQUIRED" },
+      },
+    });
+    return;
+  }
+
+  if (scenario === "CAPTCHA") {
+    await prisma.application.update({
+      where: { id: payload.applicationId },
+      data: {
+        state: "WAITING_FOR_USER",
+        nextAction: "COMPLETE_CAPTCHA",
+        nextActionDetail: { safeMessage: "Complete the CAPTCHA on the employer site manually." },
+      },
+    });
+    await prisma.applicationEvent.create({
+      data: {
+        applicationId: payload.applicationId,
+        eventType: "WAITING_FOR_USER",
+        actorType: "SYSTEM",
+        metadata: { reason: "CAPTCHA_REQUIRED" },
+      },
+    });
+    return;
+  }
+
+  if (scenario === "FINAL_FAILURE") {
+    await prisma.quotaLedgerEntry.create({
+      data: {
+        userId: payload.userId,
+        applicationId: payload.applicationId,
+        entryType: "RELEASE",
+        units: 1,
+        operationKey: `${payload.operationKey}:release`,
+        reasonCode: "SUBMIT_FAILED",
+        actorType: "SYSTEM",
+      },
+    });
+    await prisma.application.update({
+      where: { id: payload.applicationId },
+      data: { state: "FAILED_FINAL", nextAction: "REVIEW_AND_RETRY" },
+    });
+    await prisma.applicationEvent.create({
+      data: {
+        applicationId: payload.applicationId,
+        eventType: "FAILED_FINAL",
+        actorType: "SYSTEM",
+      },
+    });
+    return;
+  }
+
+  if (scenario === "UNCERTAIN") {
+    await prisma.application.update({
+      where: { id: payload.applicationId },
+      data: { state: "SUBMISSION_UNCERTAIN", nextAction: "VERIFY_SUBMISSION" },
+    });
+    await prisma.applicationEvent.create({
+      data: {
+        applicationId: payload.applicationId,
+        eventType: "SUBMISSION_UNCERTAIN",
+        actorType: "SYSTEM",
+      },
+    });
+    await new Promise((r) => setTimeout(r, 500));
+    await completeSuccessfulSubmit(payload);
+    return;
+  }
+
+  await completeSuccessfulSubmit(payload);
+}
+
+async function completeSuccessfulSubmit(payload: {
+  applicationId: string;
+  userId: string;
+  operationKey: string;
+}) {
   const period = await prisma.entitlementPeriod.findFirst({
     where: { userId: payload.userId, status: "ACTIVE" },
   });
